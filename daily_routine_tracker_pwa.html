@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Daily Routine Tracker PWA</title>
+
+    <!-- PWA Meta & Web App Manifest -->
+    <meta name="theme-color" content="#F8FAFC">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="description" content="A high-performance Daily Routine Tracker PWA optimized for modern 120Hz mobile screens.">
+
+    <!-- Google Fonts: Inter & Prompt (Thai) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bg-grey': '#F8FAFC',
+                        'card-white': '#FFFFFF',
+                        'text-dark': '#0F172A',
+                        'accent-red': '#EF4444',
+                        // Time Accents
+                        'morning-accent': '#FFB703',
+                        'afternoon-accent': '#FB8500',
+                        'evening-accent': '#1E3A8A',
+                        // Block Alternating Tokens
+                        'morning-gold': '#F4A261',
+                        'morning-amber': '#E9C46A',
+                        'afternoon-burnt': '#E76F51',
+                        'afternoon-coral': '#F08080',
+                        'evening-indigo': '#2A9D8F',
+                        'evening-teal': '#48CAE4',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Prompt', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'elevation-1': '0 2px 10px rgba(15, 23, 42, 0.05)',
+                        'elevation-2': '0 8px 25px rgba(15, 23, 42, 0.1)',
+                        'elevation-sheet': '0 -10px 40px rgba(15, 23, 42, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', 'Prompt', sans-serif;
+            background-color: #0F172A;
+            overflow: hidden;
+        }
+
+        /* 120Hz Optimized Hardware Acceleration */
+        .gpu-accelerated {
+            will-change: transform, opacity;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+
+        /* Custom Scrollbar for sleek aesthetic */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        /* Checkbox Ripple & Spring Animation */
+        .checkbox-spring {
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .checkbox-spring:active {
+            transform: scale(0.82);
+        }
+
+        /* Sheet Animation */
+        .sheet-enter {
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .sheet-enter-active {
+            transform: translateY(0%);
+        }
+
+        .backdrop-fade {
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Mobile Device Mockup Container for Desktop view */
+        .phone-container {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            max-height: 932px;
+            margin: 0 auto;
+            position: relative;
+            background-color: #F8FAFC;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (min-width: 640px) {
+            .phone-container {
+                height: 92vh;
+                border-radius: 44px;
+                border: 10px solid #1E293B;
+                margin-top: 4vh;
+            }
+        }
+    </style>
+</head>
+<body class="h-full flex items-center justify-center antialiased">
+
+    <!-- Main Device Wrapper -->
+    <div class="phone-container font-sans text-text-dark gpu-accelerated">
+
+        <!-- SIMULATED PUSH NOTIFICATION PREVIEW TOAST (Matches Design System Header) -->
+        <div id="notificationToast" class="absolute top-3 left-4 right-4 z-50 transform -translate-y-24 opacity-0 transition-all duration-500 ease-out pointer-events-none">
+            <div class="bg-card-white/95 backdrop-blur-md border border-slate-100 p-3.5 rounded-2xl shadow-elevation-2 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-accent-red flex items-center justify-center text-white shrink-0 shadow-md">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold text-slate-800 tracking-wide">Daily Routine</h4>
+                        <span id="toastTime" class="text-[10px] text-slate-400 font-medium">10:30 AM</span>
+                    </div>
+                    <p id="toastBody" class="text-xs text-slate-600 truncate mt-0.5 font-medium">Time to do your Afternoon workout!</p>
+                </div>
+                <button onclick="hideNotificationToast()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- APP TOP STATUS BAR & HEADER BAR -->
+        <header class="bg-card-white px-5 pt-4 pb-3 border-b border-slate-100 shrink-0 z-10 shadow-sm">
+            <!-- Top Controls Row -->
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1 cursor-pointer" onclick="toggleTodayDropdown()">
+                            <h1 class="text-lg font-bold text-text-dark tracking-tight leading-none" id="currentDayTitle">Today</h1>
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium mt-0.5" id="fullDateString">Monday, 22 Aug</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <!-- Demo Trigger Notification -->
+                    <button onclick="triggerSampleNotification()" class="p-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 active:scale-95 transition-transform" title="Test Push Notification">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    </button>
+                    <!-- Calendar Icon -->
+                    <button onclick="resetToToday()" class="p-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 active:scale-95 transition-transform">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Horizontal Day Selector Strip -->
+            <div class="flex items-center justify-between gap-1 py-1" id="dayStripContainer">
+                <!-- Dynamically populated day buttons -->
+            </div>
+
+            <!-- Progress Bar Section -->
+            <div class="mt-3 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <div class="flex items-center justify-between text-xs mb-1.5 font-medium">
+                    <span class="text-slate-500">Daily Completion</span>
+                    <span id="progressPercentText" class="font-bold text-text-dark">0%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div id="progressBarFill" class="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-teal-500 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN SCROLLABLE CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto px-4 py-3 space-y-4" id="mainScrollArea">
+            
+            <!-- TIME PERIOD FILTER CHIPS -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button onclick="setFilter('ALL')" id="filter-ALL" class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-text-dark text-white shadow-sm transition-all active:scale-95 shrink-0">
+                    All Routine
+                </button>
+                <button onclick="setFilter('MORNING')" id="filter-MORNING" class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95 shrink-0 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-morning-accent"></span> Morning
+                </button>
+                <button onclick="setFilter('AFTERNOON')" id="filter-AFTERNOON" class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95 shrink-0 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-afternoon-accent"></span> Afternoon
+                </button>
+                <button onclick="setFilter('EVENING')" id="filter-EVENING" class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95 shrink-0 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-evening-accent"></span> Evening
+                </button>
+            </div>
+
+            <!-- VIEW 1: TODAY TIMELINE CONTAINER -->
+            <div id="todayView" class="space-y-4">
+                <!-- Vertical Timeline Grid -->
+                <div class="relative pl-7 pt-1" id="timelineListContainer">
+                    <!-- Vertical Timeline Line (2px) -->
+                    <div class="absolute left-2.5 top-3 bottom-3 w-[2px] bg-slate-200 rounded-full z-0"></div>
+                    
+                    <!-- Dynamic Timeline Cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- VIEW 2: STATS TAB VIEW (Initially hidden) -->
+            <div id="statsView" class="hidden space-y-4 py-2">
+                <div class="bg-card-white p-5 rounded-2xl shadow-elevation-1 border border-slate-100">
+                    <h3 class="text-base font-bold text-text-dark mb-1">Weekly Consistency</h3>
+                    <p class="text-xs text-slate-400 mb-4">Track your daily completion performance</p>
+                    
+                    <!-- Bar Chart Mockup -->
+                    <div class="h-44 flex items-end justify-between gap-2 pt-4 px-2">
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 60%;">
+                                <div class="absolute bottom-0 w-full bg-amber-400 rounded-t-lg" style="height: 70%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Mon</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 85%;">
+                                <div class="absolute bottom-0 w-full bg-amber-400 rounded-t-lg" style="height: 100%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Tue</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 100%;">
+                                <div class="absolute bottom-0 w-full bg-teal-500 rounded-t-lg" style="height: 90%;"></div>
+                            </div>
+                            <span class="text-[11px] font-bold text-text-dark">Wed</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 40%;">
+                                <div class="absolute bottom-0 w-full bg-orange-400 rounded-t-lg" style="height: 50%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Thu</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 70%;">
+                                <div class="absolute bottom-0 w-full bg-teal-500 rounded-t-lg" style="height: 80%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Fri</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 50%;">
+                                <div class="absolute bottom-0 w-full bg-indigo-500 rounded-t-lg" style="height: 60%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Sat</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 30%;">
+                                <div class="absolute bottom-0 w-full bg-slate-300 rounded-t-lg" style="height: 20%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Sun</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats summary cards -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-card-white p-4 rounded-2xl border border-slate-100 shadow-elevation-1">
+                        <span class="text-xs text-slate-400 font-medium">Current Streak</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span class="text-2xl font-bold text-text-dark">7</span>
+                            <span class="text-xs text-amber-500 font-semibold">Days 🔥</span>
+                        </div>
+                    </div>
+                    <div class="bg-card-white p-4 rounded-2xl border border-slate-100 shadow-elevation-1">
+                        <span class="text-xs text-slate-400 font-medium">Tasks Completed</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="statsCompletedCount" class="text-2xl font-bold text-text-dark">18</span>
+                            <span class="text-xs text-teal-600 font-semibold">Items</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: HABITS TAB VIEW (Initially hidden) -->
+            <div id="habitsView" class="hidden space-y-3 py-2">
+                <div class="bg-card-white p-4 rounded-2xl border border-slate-100 shadow-elevation-1 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">💧</div>
+                        <div>
+                            <h4 class="text-sm font-bold text-text-dark">Drink 2L Water</h4>
+                            <p class="text-xs text-slate-400">Daily Target • 8/8 Glasses</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 font-bold text-xs rounded-full">Done</span>
+                </div>
+                <div class="bg-card-white p-4 rounded-2xl border border-slate-100 shadow-elevation-1 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">🧘</div>
+                        <div>
+                            <h4 class="text-sm font-bold text-text-dark">Mindful Meditation</h4>
+                            <p class="text-xs text-slate-400">Evening • 15 Minutes</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-slate-100 text-slate-500 font-bold text-xs rounded-full">Pending</span>
+                </div>
+            </div>
+
+            <!-- VIEW 4: PROFILE TAB VIEW (Initially hidden) -->
+            <div id="profileView" class="hidden space-y-4 py-2">
+                <div class="bg-card-white p-5 rounded-2xl border border-slate-100 shadow-elevation-1 text-center">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-teal-400 p-1 mx-auto mb-3">
+                        <div class="w-full h-full rounded-full bg-slate-800 text-white flex items-center justify-center text-2xl font-bold">
+                            RT
+                        </div>
+                    </div>
+                    <h3 class="text-base font-bold text-text-dark">Routine Optimizer</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Mobile AMOLED 120Hz Edition</p>
+
+                    <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-left">
+                        <div class="flex items-center justify-between py-2 text-sm font-medium">
+                            <span class="text-slate-700">Push Notifications</span>
+                            <input type="checkbox" checked class="accent-orange-500 w-4 h-4">
+                        </div>
+                        <div class="flex items-center justify-between py-2 text-sm font-medium">
+                            <span class="text-slate-700">120Hz Performance Mode</span>
+                            <span class="text-xs text-emerald-500 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md">Active</span>
+                        </div>
+                        <button onclick="clearAllData()" class="w-full mt-4 py-2.5 bg-red-50 text-accent-red font-semibold text-xs rounded-xl hover:bg-red-100 transition-colors">
+                            Reset All Local Activities
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- FLOATING ACTION BUTTON (FAB) FOR ADDING CUSTOM ROUTINES -->
+        <button onclick="openAddModal()" class="absolute bottom-20 right-6 w-14 h-14 bg-gradient-to-tr from-orange-500 to-amber-400 text-white rounded-full flex items-center justify-center shadow-lg shadow-orange-500/30 active:scale-90 hover:scale-105 transition-all duration-200 z-30 group" aria-label="Add Activity">
+            <svg class="w-7 h-7 transform group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+            </svg>
+        </button>
+
+        <!-- BOTTOM NAVIGATION BAR (Strictly adhering to Design Tokens & 24px Icons) -->
+        <nav class="bg-card-white border-t border-slate-100 px-6 py-2.5 flex items-center justify-between shrink-0 z-20">
+            <button onclick="switchTab('today')" id="nav-today" class="nav-item flex flex-col items-center gap-1 text-orange-500 font-semibold transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                </svg>
+                <span class="text-[10px]">Today</span>
+            </button>
+            <button onclick="switchTab('stats')" id="nav-stats" class="nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <span class="text-[10px]">Stats</span>
+            </button>
+            <button onclick="switchTab('habits')" id="nav-habits" class="nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="text-[10px]">Habits</span>
+            </button>
+            <button onclick="switchTab('profile')" id="nav-profile" class="nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span class="text-[10px]">Profile</span>
+            </button>
+        </nav>
+
+        <!-- ADD ACTIVITY MODAL / BOTTOM SHEET -->
+        <div id="addModalBackdrop" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 opacity-0 pointer-events-none transition-opacity duration-300" onclick="closeAddModal()"></div>
+        
+        <div id="addModalSheet" class="absolute bottom-0 left-0 right-0 bg-card-white rounded-t-3xl p-6 shadow-elevation-sheet z-50 transform translate-y-full transition-transform duration-300 ease-out flex flex-col max-h-[90vh] overflow-y-auto">
+            <!-- Sheet Drag Indicator Handle -->
+            <div class="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-text-dark">Create Custom Activity</h3>
+                <button onclick="closeAddModal()" class="p-1 rounded-full text-slate-400 hover:bg-slate-100">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <!-- Activity Creation Form -->
+            <form id="addActivityForm" onsubmit="handleSaveActivity(event)" class="space-y-4">
+                <!-- Activity Title -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Activity Name / ชื่อกิจกรรม</label>
+                    <input type="text" id="activityTitle" required placeholder="e.g. ออกกำลังกาย, อ่านหนังสือ, Meditation" 
+                           class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-text-dark focus:outline-none focus:ring-2 focus:ring-orange-500 font-medium">
+                </div>
+
+                <!-- Quick Presets -->
+                <div>
+                    <span class="block text-[11px] font-semibold text-slate-400 mb-1.5">Quick Presets</span>
+                    <div class="flex flex-wrap gap-1.5">
+                        <button type="button" onclick="setPreset('🏃‍♂️ Gym Workout', 'Exercise')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700">🏃‍♂️ Gym</button>
+                        <button type="button" onclick="setPreset('📖 Read & Learn', 'Personal')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700">📖 Reading</button>
+                        <button type="button" onclick="setPreset('🥗 Healthy Breakfast', 'Nutrition')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700">🥗 Breakfast</button>
+                        <button type="button" onclick="setPreset('💻 Deep Work', 'Focus')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-medium text-slate-700">💻 Deep Work</button>
+                    </div>
+                </div>
+
+                <!-- Start & End Time Pickers -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Start Time</label>
+                        <input type="time" id="startTime" required value="08:00" onchange="autoDetectTimePeriod()"
+                               class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-text-dark focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">End Time</label>
+                        <input type="time" id="endTime" required value="09:00"
+                               class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-text-dark focus:outline-none focus:ring-2 focus:ring-orange-500">
+                    </div>
+                </div>
+
+                <!-- Time Period Selection & Auto Token Preview -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Time Period & Block Theme</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <label class="cursor-pointer">
+                            <input type="radio" name="timePeriod" value="MORNING" id="periodMorning" class="peer hidden" onchange="updateThemePreview()">
+                            <div class="py-2 px-1 text-center rounded-xl border border-slate-200 peer-checked:border-amber-500 peer-checked:bg-amber-50 peer-checked:text-amber-700 text-xs font-semibold text-slate-600 transition-all">
+                                🌅 Morning
+                                <div class="text-[9px] text-slate-400 font-normal">06:00-12:00</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="timePeriod" value="AFTERNOON" id="periodAfternoon" class="peer hidden" onchange="updateThemePreview()">
+                            <div class="py-2 px-1 text-center rounded-xl border border-slate-200 peer-checked:border-orange-500 peer-checked:bg-orange-50 peer-checked:text-orange-700 text-xs font-semibold text-slate-600 transition-all">
+                                ☀️ Afternoon
+                                <div class="text-[9px] text-slate-400 font-normal">13:00-17:00</div>
+                            </div>
+                        </label>
+                        <label class="cursor-pointer">
+                            <input type="radio" name="timePeriod" value="EVENING" id="periodEvening" class="peer hidden" onchange="updateThemePreview()">
+                            <div class="py-2 px-1 text-center rounded-xl border border-slate-200 peer-checked:border-indigo-600 peer-checked:bg-indigo-50 peer-checked:text-indigo-700 text-xs font-semibold text-slate-600 transition-all">
+                                🌙 Evening
+                                <div class="text-[9px] text-slate-400 font-normal">18:00-24:00</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Category Tag Selection -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Category Tag</label>
+                    <select id="activityCategory" class="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-orange-500">
+                        <option value="Personal">Personal • ส่วนตัว</option>
+                        <option value="Exercise">Exercise • ออกกำลังกาย</option>
+                        <option value="Nutrition">Nutrition • อาหาร</option>
+                        <option value="Focus">Focus • ทำงาน/เรียน</option>
+                        <option value="Health">Health • สุขภาพ</option>
+                    </select>
+                </div>
+
+                <!-- Push Notification Toggle -->
+                <div class="flex items-center justify-between py-2 border-t border-b border-slate-100">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-lg bg-orange-100 text-orange-600 flex items-center justify-center">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                        </div>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-700 block">Push Notification Reminder</span>
+                            <span class="text-[10px] text-slate-400">Notify me when event starts</span>
+                        </div>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="reminderToggle" checked class="sr-only peer">
+                        <div class="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
+                    </label>
+                </div>
+
+                <!-- Save Action Button -->
+                <div class="pt-2">
+                    <button type="submit" class="w-full py-3.5 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-sm rounded-xl shadow-lg shadow-orange-500/25 active:scale-[0.98] transition-all">
+                        Create Routine Card
+                    </button>
+                </div>
+            </form>
+        </div>
+
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & STATE MANAGEMENT -->
+    <script>
+        
+        // Default initial items matching design system specification
+        const DEFAULT_ROUTINES = [
+            {
+                id: '1',
+                title: 'Morning Run',
+                startTime: '06:00',
+                endTime: '06:30',
+                period: 'MORNING', // Bright Gold / Amber Light
+                category: 'Exercise',
+                durationMinutes: 30,
+                completed: false,
+                reminder: true,
+                dayIndex: 0 // Mon
+            },
+            {
+                id: '2',
+                title: 'Healthy Breakfast',
+                startTime: '07:00',
+                endTime: '07:30',
+                period: 'MORNING',
+                category: 'Nutrition',
+                durationMinutes: 30,
+                completed: true,
+                reminder: true,
+                dayIndex: 0
+            },
+            {
+                id: '3',
+                title: 'Deep Work Session',
+                startTime: '09:00',
+                endTime: '10:30',
+                period: 'MORNING',
+                category: 'Focus',
+                durationMinutes: 90,
+                completed: false,
+                reminder: true,
+                dayIndex: 0
+            },
+            {
+                id: '4',
+                title: 'Read & Learn',
+                startTime: '11:00',
+                endTime: '11:45',
+                period: 'MORNING',
+                category: 'Personal',
+                durationMinutes: 45,
+                completed: false,
+                reminder: false,
+                dayIndex: 0
+            },
+            {
+                id: '5',
+                title: 'Lunch Break & Walk',
+                startTime: '13:00',
+                endTime: '14:00',
+                period: 'AFTERNOON', // Burnt Sienna / Coral Pink
+                category: 'Nutrition',
+                durationMinutes: 60,
+                completed: false,
+                reminder: true,
+                dayIndex: 0
+            },
+            {
+                id: '6',
+                title: 'Project Sprint Work',
+                startTime: '15:00',
+                endTime: '16:30',
+                period: 'AFTERNOON',
+                category: 'Focus',
+                durationMinutes: 90,
+                completed: false,
+                reminder: true,
+                dayIndex: 0
+            },
+            {
+                id: '7',
+                title: 'Gym Workout',
+                startTime: '18:00',
+                endTime: '19:00',
+                period: 'EVENING', // Deep Indigo / Soft Teal
+                category: 'Exercise',
+                durationMinutes: 60,
+                completed: false,
+                reminder: true,
+                dayIndex: 0
+            },
+            {
+                id: '8',
+                title: 'Evening Reading',
+                startTime: '20:00',
+                endTime: '20:30',
+                period: 'EVENING',
+                category: 'Personal',
+                durationMinutes: 30,
+                completed: false,
+                reminder: true,
+                dayIndex: 0
+            },
+            {
+                id: '9',
+                title: 'Meditation & Mind',
+                startTime: '21:00',
+                endTime: '21:30',
+                period: 'EVENING',
+                category: 'Health',
+                durationMinutes: 30,
+                completed: true,
+                reminder: true,
+                dayIndex: 0
+            }
+        ];
+
+        // State variables
+        let routines = [];
+        let activeDayIndex = 0; // 0: Mon, 1: Tue, ... 6: Sun
+        let activeFilter = 'ALL';
+
+        // Color Mapping Specification Table strictly from Design Tokens
+        const COLOR_MAP = {
+            MORNING: {
+                // Bright Gold (#F4A261) / Amber Light (#E9C46A)
+                bgGradient: 'from-[#F4A261] to-[#E9C46A]',
+                dotColor: '#FFB703',
+                badgeBg: 'bg-amber-100 text-amber-800',
+                textColor: 'text-amber-950',
+                icon: '☀️'
+            },
+            AFTERNOON: {
+                // Burnt Sienna (#E76F51) / Coral Pink (#F08080)
+                bgGradient: 'from-[#E76F51] to-[#F08080]',
+                dotColor: '#FB8500',
+                badgeBg: 'bg-orange-100 text-orange-800',
+                textColor: 'text-white',
+                icon: '🏋️‍♂️'
+            },
+            EVENING: {
+                // Deep Indigo (#2A9D8F) / Soft Teal (#48CAE4)
+                bgGradient: 'from-[#2A9D8F] to-[#48CAE4]',
+                dotColor: '#1E3A8A',
+                badgeBg: 'bg-teal-100 text-teal-800',
+                textColor: 'text-white',
+                icon: '🌙'
+            }
+        };
+
+        const DAYS = [
+            { short: 'Mon', num: '20' },
+            { short: 'Tue', num: '21' },
+            { short: 'Wed', num: '22' },
+            { short: 'Thu', num: '23' },
+            { short: 'Fri', num: '24' },
+            { short: 'Sat', num: '25' },
+            { short: 'Sun', num: '26' },
+        ];
+
+        window.onload = function() {
+            loadRoutinesFromStorage();
+            renderDayStrip();
+            renderTimeline();
+            updateProgress();
+            autoDetectTimePeriod();
+        };
+
+        function loadRoutinesFromStorage() {
+            try {
+                const saved = localStorage.getItem('daily_routines_data');
+                if (saved) {
+                    routines = JSON.parse(saved);
+                } else {
+                    routines = [...DEFAULT_ROUTINES];
+                    saveToStorage();
+                }
+            } catch(e) {
+                routines = [...DEFAULT_ROUTINES];
+            }
+        }
+
+        function saveToStorage() {
+            try {
+                localStorage.setItem('daily_routines_data', JSON.stringify(routines));
+            } catch(e) {
+                console.error('Storage quota exceeded or error', e);
+            }
+        }
+
+        function renderDayStrip() {
+            const container = document.getElementById('dayStripContainer');
+            container.innerHTML = '';
+
+            DAYS.forEach((day, index) => {
+                const isActive = index === activeDayIndex;
+                const btn = document.createElement('button');
+                btn.onclick = () => selectDay(index);
+                btn.className = `flex flex-col items-center justify-center py-2 px-3 rounded-2xl transition-all duration-200 active:scale-90 ${
+                    isActive 
+                    ? 'bg-text-dark text-white font-bold shadow-md shadow-slate-900/10' 
+                    : 'bg-slate-50 text-slate-500 hover:bg-slate-100'
+                }`;
+
+                btn.innerHTML = `
+                    <span class="text-[10px] uppercase font-semibold tracking-wider">${day.short}</span>
+                    <span class="text-sm font-bold mt-0.5">${day.num}</span>
+                `;
+                container.appendChild(btn);
+            });
+        }
+
+        function selectDay(index) {
+            activeDayIndex = index;
+            renderDayStrip();
+            renderTimeline();
+            updateProgress();
+            
+            // Update day title text
+            const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+            document.getElementById('currentDayTitle').textContent = index === 0 ? 'Today' : dayNames[index];
+            document.getElementById('fullDateString').textContent = `${dayNames[index]}, ${DAYS[index].num} Aug`;
+        }
+
+        function resetToToday() {
+            selectDay(0);
+        }
+
+        function setFilter(filterType) {
+            activeFilter = filterType;
+            // Update filter chip button styles
+            document.querySelectorAll('.filter-chip').forEach(btn => {
+                btn.className = 'filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95 shrink-0';
+            });
+            const activeBtn = document.getElementById(`filter-${filterType}`);
+            if(activeBtn) {
+                activeBtn.className = 'filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-text-dark text-white shadow-sm transition-all active:scale-95 shrink-0';
+            }
+            renderTimeline();
+        }
+
+        function renderTimeline() {
+            const container = document.getElementById('timelineListContainer');
+            
+            // Filter routines by active day and active period filter
+            const dayRoutines = routines.filter(r => (r.dayIndex || 0) === activeDayIndex);
+            const filteredRoutines = dayRoutines.filter(r => {
+                if (activeFilter === 'ALL') return true;
+                return r.period === activeFilter;
+            });
+
+            // Sort by start time ascending
+            filteredRoutines.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+            if (filteredRoutines.length === 0) {
+                container.innerHTML = `
+                    <div class="py-12 text-center text-slate-400">
+                        <svg class="w-12 h-12 mx-auto mb-2 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <p class="text-xs font-medium">No routine events found for this view.</p>
+                        <button onclick="openAddModal()" class="mt-3 px-4 py-2 bg-orange-50 text-orange-600 font-bold text-xs rounded-xl hover:bg-orange-100">Add New Routine</button>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = `
+                <!-- Timeline vertical line element -->
+                <div class="absolute left-2.5 top-3 bottom-3 w-[2px] bg-slate-200 rounded-full z-0"></div>
+            `;
+
+            // Toggle alternating background block color variant index per time period
+            let morningCount = 0;
+            let afternoonCount = 0;
+            let eveningCount = 0;
+
+            filteredRoutines.forEach((item) => {
+                const isCompleted = item.completed;
+                const token = COLOR_MAP[item.period] || COLOR_MAP.MORNING;
+
+                // Calculate alternating background color according to Design System:
+                // Morning: #F4A261 (Gold) vs #E9C46A (Amber)
+                // Afternoon: #E76F51 (Burnt Sienna) vs #F08080 (Coral Pink)
+                // Evening: #2A9D8F (Indigo) vs #48CAE4 (Soft Teal)
+                let cardBgStyle = '';
+                if (item.period === 'MORNING') {
+                    cardBgStyle = (morningCount++ % 2 === 0) 
+                        ? 'background-color: #F4A261; color: #0F172A;' 
+                        : 'background-color: #E9C46A; color: #0F172A;';
+                } else if (item.period === 'AFTERNOON') {
+                    cardBgStyle = (afternoonCount++ % 2 === 0) 
+                        ? 'background-color: #E76F51; color: #FFFFFF;' 
+                        : 'background-color: #F08080; color: #FFFFFF;';
+                } else {
+                    cardBgStyle = (eveningCount++ % 2 === 0) 
+                        ? 'background-color: #2A9D8F; color: #FFFFFF;' 
+                        : 'background-color: #48CAE4; color: #0F172A;';
+                }
+
+                // Completed Card Visual State Overrides
+                const cardStateClass = isCompleted 
+                    ? 'opacity-70 grayscale-[0.2] border border-emerald-400/30' 
+                    : 'shadow-elevation-1 hover:shadow-elevation-2';
+
+                // Calculate duration text
+                const durationText = item.durationMinutes ? `${item.durationMinutes} min` : '30 min';
+
+                html += `
+                    <div class="relative mb-5 group">
+                        <!-- Timeline Dot (10px strictly as specified) -->
+                        <div class="absolute -left-7 top-4 w-[10px] h-[10px] rounded-full border-2 border-white z-10 shadow-sm" style="background-color: ${isCompleted ? '#10B981' : token.dotColor}"></div>
+
+                        <!-- Start Time Label -->
+                        <div class="text-[11px] font-bold text-slate-400 mb-1 ml-1 flex items-center justify-between">
+                            <span>${item.startTime}</span>
+                            <span class="text-[10px] font-medium text-slate-400 opacity-80">${item.endTime}</span>
+                        </div>
+
+                        <!-- Card Block Specifications: Corner Radius 12px, Padding 16px -->
+                        <div class="p-4 rounded-[12px] transition-all duration-300 transform active:scale-[0.98] ${cardStateClass}" style="${cardBgStyle}">
+                            <div class="flex items-start justify-between gap-3">
+                                
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        <h3 class="font-bold text-base tracking-tight leading-tight truncate ${isCompleted ? 'line-through opacity-80' : ''}">
+                                            ${escapeHtml(item.title)}
+                                        </h3>
+                                    </div>
+
+                                    <div class="flex items-center gap-2 text-xs opacity-90 font-medium">
+                                        <span>${durationText}</span>
+                                        <span>•</span>
+                                        <span class="px-2 py-0.5 rounded-md bg-black/10 text-[10px] font-semibold">${item.category || 'Routine'}</span>
+                                        ${item.reminder ? `
+                                            <svg class="w-3.5 h-3.5 inline ml-0.5 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                                        ` : ''}
+                                    </div>
+                                </div>
+
+                                <!-- Touch-Friendly Interactive Completion Checkbox Button -->
+                                <button onclick="toggleComplete('${item.id}')" class="checkbox-spring shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${
+                                    isCompleted 
+                                    ? 'bg-emerald-500 border-emerald-500 text-white shadow-md' 
+                                    : 'bg-white/20 border-white/60 hover:bg-white/40 text-transparent'
+                                }">
+                                    <svg class="w-4 h-4 stroke-current" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function toggleComplete(id) {
+            const item = routines.find(r => r.id === id);
+            if (item) {
+                item.completed = !item.completed;
+                saveToStorage();
+                renderTimeline();
+                updateProgress();
+
+                if (item.completed) {
+                    showToastNotification(`Completed "${item.title}"! Keep up the momentum! 🎉`);
+                }
+            }
+        }
+
+        function updateProgress() {
+            const dayRoutines = routines.filter(r => (r.dayIndex || 0) === activeDayIndex);
+            if (dayRoutines.length === 0) {
+                document.getElementById('progressPercentText').textContent = '0%';
+                document.getElementById('progressBarFill').style.width = '0%';
+                return;
+            }
+
+            const completedCount = dayRoutines.filter(r => r.completed).length;
+            const percent = Math.round((completedCount / dayRoutines.length) * 100);
+
+            document.getElementById('progressPercentText').textContent = `${percent}%`;
+            document.getElementById('progressBarFill').style.width = `${percent}%`;
+
+            // Update stats tab counter as well
+            const statsElem = document.getElementById('statsCompletedCount');
+            if (statsElem) statsElem.textContent = completedCount;
+        }
+
+        function openAddModal() {
+            const backdrop = document.getElementById('addModalBackdrop');
+            const sheet = document.getElementById('addModalSheet');
+            
+            backdrop.classList.remove('pointer-events-none');
+            backdrop.classList.add('opacity-100');
+            
+            sheet.classList.remove('translate-y-full');
+            sheet.classList.add('translate-y-0');
+
+            autoDetectTimePeriod();
+        }
+
+        function closeAddModal() {
+            const backdrop = document.getElementById('addModalBackdrop');
+            const sheet = document.getElementById('addModalSheet');
+            
+            backdrop.classList.remove('opacity-100');
+            backdrop.classList.add('pointer-events-none');
+            
+            sheet.classList.remove('translate-y-0');
+            sheet.classList.add('translate-y-full');
+        }
+
+        function setPreset(title, category) {
+            document.getElementById('activityTitle').value = title;
+            document.getElementById('activityCategory').value = category;
+        }
+
+        function autoDetectTimePeriod() {
+            const startTimeVal = document.getElementById('startTime').value || '08:00';
+            const hour = parseInt(startTimeVal.split(':')[0], 10);
+
+            let period = 'MORNING';
+            if (hour >= 6 && hour < 13) {
+                period = 'MORNING';
+            } else if (hour >= 13 && hour < 18) {
+                period = 'AFTERNOON';
+            } else {
+                period = 'EVENING';
+            }
+
+            if (period === 'MORNING') document.getElementById('periodMorning').checked = true;
+            if (period === 'AFTERNOON') document.getElementById('periodAfternoon').checked = true;
+            if (period === 'EVENING') document.getElementById('periodEvening').checked = true;
+        }
+
+        function updateThemePreview() {
+            // Can be used for extra visual cues in form
+        }
+
+        function handleSaveActivity(e) {
+            e.preventDefault();
+
+            const title = document.getElementById('activityTitle').value.trim();
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const category = document.getElementById('activityCategory').value;
+            const reminder = document.getElementById('reminderToggle').checked;
+            
+            const selectedPeriodRadio = document.querySelector('input[name="timePeriod"]:checked');
+            const period = selectedPeriodRadio ? selectedPeriodRadio.value : 'MORNING';
+
+            // Calculate duration in minutes
+            const startMins = convertToMinutes(startTime);
+            const endMins = convertToMinutes(endTime);
+            let durationMinutes = endMins - startMins;
+            if (durationMinutes <= 0) durationMinutes = 30; // fallback default
+
+            const newActivity = {
+                id: Date.now().toString(),
+                title: title,
+                startTime: startTime,
+                endTime: endTime,
+                period: period,
+                category: category,
+                durationMinutes: durationMinutes,
+                completed: false,
+                reminder: reminder,
+                dayIndex: activeDayIndex
+            };
+
+            routines.push(newActivity);
+            saveToStorage();
+            
+            // Re-render
+            renderTimeline();
+            updateProgress();
+            closeAddModal();
+
+            // Clear input
+            document.getElementById('activityTitle').value = '';
+
+            // Toast feedback
+            showToastNotification(`Added "${title}" to your ${period.toLowerCase()} routine!`);
+        }
+
+        function convertToMinutes(timeStr) {
+            if (!timeStr) return 0;
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        }
+
+        let toastTimeout;
+        function showToastNotification(message, timeStr = 'Just Now') {
+            const toast = document.getElementById('notificationToast');
+            document.getElementById('toastBody').textContent = message;
+            document.getElementById('toastTime').textContent = timeStr;
+
+            toast.classList.remove('-translate-y-24', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            if (toastTimeout) clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                hideNotificationToast();
+            }, 3500);
+        }
+
+        function hideNotificationToast() {
+            const toast = document.getElementById('notificationToast');
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('-translate-y-24', 'opacity-0', 'pointer-events-none');
+        }
+
+        function triggerSampleNotification() {
+            showToastNotification("Time to do your Afternoon workout!", "10:30 AM");
+        }
+
+        function switchTab(tabName) {
+            // Hide all tab views
+            ['todayView', 'statsView', 'habitsView', 'profileView'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+
+            // Deactivate nav icons
+            document.querySelectorAll('.nav-item').forEach(btn => {
+                btn.className = 'nav-item flex flex-col items-center gap-1 text-slate-400 hover:text-slate-600 transition-colors';
+            });
+
+            // Show selected
+            document.getElementById(`${tabName}View`).classList.remove('hidden');
+            const activeNav = document.getElementById(`nav-${tabName}`);
+            if (activeNav) {
+                activeNav.className = 'nav-item flex flex-col items-center gap-1 text-orange-500 font-semibold transition-colors';
+            }
+        }
+
+        function clearAllData() {
+            if (window.confirm ? true : true) {
+                routines = [...DEFAULT_ROUTINES];
+                saveToStorage();
+                renderTimeline();
+                updateProgress();
+                showToastNotification("Reset all routines to initial defaults.");
+            }
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+    </script>
+</body>
+</html>
