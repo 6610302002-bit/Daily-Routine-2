@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="th" class="h-full bg-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Daily Routine Tracker PWA</title>
+
+    <!-- PWA Meta & Web App Manifest -->
+    <meta name="theme-color" content="#F8FAFC">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="description" content="A high-performance Daily Routine Tracker PWA optimized for modern 120Hz mobile screens.">
+
+    <!-- Google Fonts: Inter & Prompt (Thai) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'bg-grey': '#F8FAFC',
+                        'card-white': '#FFFFFF',
+                        'text-dark': '#0F172A',
+                        'accent-red': '#EF4444',
+                        // Time Accents
+                        'morning-accent': '#FFB703',
+                        'afternoon-accent': '#FB8500',
+                        'evening-accent': '#1E3A8A',
+                        // Block Alternating Tokens
+                        'morning-gold': '#F4A261',
+                        'morning-amber': '#E9C46A',
+                        'afternoon-burnt': '#E76F51',
+                        'afternoon-coral': '#F08080',
+                        'evening-indigo': '#2A9D8F',
+                        'evening-teal': '#48CAE4',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Prompt', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'elevation-1': '0 2px 10px rgba(15, 23, 42, 0.05)',
+                        'elevation-2': '0 8px 25px rgba(15, 23, 42, 0.1)',
+                        'elevation-sheet': '0 -10px 40px rgba(15, 23, 42, 0.15)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Inter', 'Prompt', sans-serif;
+            background-color: #0F172A;
+            overflow: hidden;
+        }
+
+        /* 120Hz Optimized Hardware Acceleration */
+        .gpu-accelerated {
+            will-change: transform, opacity;
+            transform: translateZ(0);
+            backface-visibility: hidden;
+        }
+
+        /* Custom Scrollbar for sleek aesthetic */
+        ::-webkit-scrollbar {
+            width: 0px;
+            background: transparent;
+        }
+
+        /* Checkbox Ripple & Spring Animation */
+        .checkbox-spring {
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease;
+        }
+        .checkbox-spring:active {
+            transform: scale(0.82);
+        }
+
+        /* Sheet Animation */
+        .sheet-enter {
+            transform: translateY(100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .sheet-enter-active {
+            transform: translateY(0%);
+        }
+
+        .backdrop-fade {
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* Mobile Device Mockup Container for Desktop view */
+        .phone-container {
+            width: 100%;
+            max-width: 430px;
+            height: 100vh;
+            max-height: 932px;
+            margin: 0 auto;
+            position: relative;
+            background-color: #F8FAFC;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        @media (min-width: 640px) {
+            .phone-container {
+                height: 92vh;
+                border-radius: 44px;
+                border: 10px solid #1E293B;
+                margin-top: 4vh;
+            }
+        }
+    </style>
+</head>
+<body class="h-full flex items-center justify-center antialiased">
+
+    <!-- Main Device Wrapper -->
+    <div class="phone-container font-sans text-text-dark gpu-accelerated">
+
+        <!-- SIMULATED PUSH NOTIFICATION PREVIEW TOAST (Matches Design System Header) -->
+        <div id="notificationToast" class="absolute top-3 left-4 right-4 z-50 transform -translate-y-24 opacity-0 transition-all duration-500 ease-out pointer-events-none">
+            <div class="bg-card-white/95 backdrop-blur-md border border-slate-100 p-3.5 rounded-2xl shadow-elevation-2 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-accent-red flex items-center justify-center text-white shrink-0 shadow-md">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold text-slate-800 tracking-wide">Daily Routine</h4>
+                        <span id="toastTime" class="text-[10px] text-slate-400 font-medium">10:30 AM</span>
+                    </div>
+                    <p id="toastBody" class="text-xs text-slate-600 truncate mt-0.5 font-medium">Time to do your Afternoon workout!</p>
+                </div>
+                <button onclick="hideNotificationToast()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- APP TOP STATUS BAR & HEADER BAR -->
+        <header class="bg-card-white px-5 pt-4 pb-3 border-b border-slate-100 shrink-0 z-10 shadow-sm">
+            <!-- Top Controls Row -->
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-1 cursor-pointer" onclick="toggleTodayDropdown()">
+                            <h1 class="text-lg font-bold text-text-dark tracking-tight leading-none" id="currentDayTitle">Today</h1>
+                            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium mt-0.5" id="fullDateString">Monday, 22 Aug</p>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <!-- Demo Trigger Notification -->
+                    <button onclick="triggerSampleNotification()" class="p-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 active:scale-95 transition-transform" title="Test Push Notification">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+                    </button>
+                    <!-- Calendar Icon -->
+                    <button onclick="resetToToday()" class="p-2 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 active:scale-95 transition-transform">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Horizontal Day Selector Strip -->
+            <div class="flex items-center justify-between gap-1 py-1" id="dayStripContainer">
+                <!-- Dynamically populated day buttons -->
+            </div>
+
+            <!-- Progress Bar Section -->
+            <div class="mt-3 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                <div class="flex items-center justify-between text-xs mb-1.5 font-medium">
+                    <span class="text-slate-500">Daily Completion</span>
+                    <span id="progressPercentText" class="font-bold text-text-dark">0%</span>
+                </div>
+                <div class="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                    <div id="progressBarFill" class="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-teal-500 rounded-full transition-all duration-500 ease-out" style="width: 0%"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- MAIN SCROLLABLE CONTENT AREA -->
+        <main class="flex-1 overflow-y-auto px-4 py-3 space-y-4" id="mainScrollArea">
+            
+            <!-- TIME PERIOD FILTER CHIPS -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+                <button onclick="setFilter('ALL')" id="filter-ALL" class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-text-dark text-white shadow-sm transition-all active:scale-95 shrink-0">
+                    All Routine
+                </button>
+                <button onclick="setFilter('MORNING')" id="filter-MORNING" class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95 shrink-0 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-morning-accent"></span> Morning
+                </button>
+                <button onclick="setFilter('AFTERNOON')" id="filter-AFTERNOON" class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95 shrink-0 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-afternoon-accent"></span> Afternoon
+                </button>
+                <button onclick="setFilter('EVENING')" id="filter-EVENING" class="filter-chip px-3.5 py-1.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-all active:scale-95 shrink-0 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-evening-accent"></span> Evening
+                </button>
+            </div>
+
+            <!-- VIEW 1: TODAY TIMELINE CONTAINER -->
+            <div id="todayView" class="space-y-4">
+                <!-- Vertical Timeline Grid -->
+                <div class="relative pl-7 pt-1" id="timelineListContainer">
+                    <!-- Vertical Timeline Line (2px) -->
+                    <div class="absolute left-2.5 top-3 bottom-3 w-[2px] bg-slate-200 rounded-full z-0"></div>
+                    
+                    <!-- Dynamic Timeline Cards will be injected here -->
+                </div>
+            </div>
+
+            <!-- VIEW 2: STATS TAB VIEW (Initially hidden) -->
+            <div id="statsView" class="hidden space-y-4 py-2">
+                <div class="bg-card-white p-5 rounded-2xl shadow-elevation-1 border border-slate-100">
+                    <h3 class="text-base font-bold text-text-dark mb-1">Weekly Consistency</h3>
+                    <p class="text-xs text-slate-400 mb-4">Track your daily completion performance</p>
+                    
+                    <!-- Bar Chart Mockup -->
+                    <div class="h-44 flex items-end justify-between gap-2 pt-4 px-2">
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 60%;">
+                                <div class="absolute bottom-0 w-full bg-amber-400 rounded-t-lg" style="height: 70%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Mon</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 85%;">
+                                <div class="absolute bottom-0 w-full bg-amber-400 rounded-t-lg" style="height: 100%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Tue</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 100%;">
+                                <div class="absolute bottom-0 w-full bg-teal-500 rounded-t-lg" style="height: 90%;"></div>
+                            </div>
+                            <span class="text-[11px] font-bold text-text-dark">Wed</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 40%;">
+                                <div class="absolute bottom-0 w-full bg-orange-400 rounded-t-lg" style="height: 50%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Thu</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 70%;">
+                                <div class="absolute bottom-0 w-full bg-teal-500 rounded-t-lg" style="height: 80%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Fri</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 50%;">
+                                <div class="absolute bottom-0 w-full bg-indigo-500 rounded-t-lg" style="height: 60%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Sat</span>
+                        </div>
+                        <div class="flex-1 flex flex-col items-center gap-2">
+                            <div class="w-full bg-slate-100 rounded-t-lg relative" style="height: 30%;">
+                                <div class="absolute bottom-0 w-full bg-slate-300 rounded-t-lg" style="height: 20%;"></div>
+                            </div>
+                            <span class="text-[11px] text-slate-400 font-medium">Sun</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats summary cards -->
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-card-white p-4 rounded-2xl border border-slate-100 shadow-elevation-1">
+                        <span class="text-xs text-slate-400 font-medium">Current Streak</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span class="text-2xl font-bold text-text-dark">7</span>
+                            <span class="text-xs text-amber-500 font-semibold">Days 🔥</span>
+                        </div>
+                    </div>
+                    <div class="bg-card-white p-4 rounded-2xl border border-slate-100 shadow-elevation-1">
+                        <span class="text-xs text-slate-400 font-medium">Tasks Completed</span>
+                        <div class="flex items-baseline gap-1 mt-1">
+                            <span id="statsCompletedCount" class="text-2xl font-bold text-text-dark">18</span>
+                            <span class="text-xs text-teal-600 font-semibold">Items</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW 3: HABITS TAB VIEW (Initially hidden) -->
+            <div id="habitsView" class="hidden space-y-3 py-2">
+                <div class="bg-card-white p-4 rounded-2xl border border-slate-100 shadow-elevation-1 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center font-bold">💧</div>
+                        <div>
+                            <h4 class="text-sm font-bold text-text-dark">Drink 2L Water</h4>
+                            <p class="text-xs text-slate-400">Daily Target • 8/8 Glasses</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-emerald-50 text-emerald-600 font-bold text-xs rounded-full">Done</span>
+                </div>
+                <div class="bg-card-white p-4 rounded-2xl border border-slate-100 shadow-elevation-1 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">🧘</div>
+                        <div>
+                            <h4 class="text-sm font-bold text-text-dark">Mindful Meditation</h4>
+                            <p class="text-xs text-slate-400">Evening • 15 Minutes</p>
+                        </div>
+                    </div>
+                    <span class="px-2.5 py-1 bg-slate-100 text-slate-500 font-bold text-xs rounded-full">Pending</span>
+                </div>
+            </div>
+
+            <!-- VIEW 4: PROFILE TAB VIEW (Initially hidden) -->
+            <div id="profileView" class="hidden space-y-4 py-2">
+                <div class="bg-card-white p-5 rounded-2xl border border-slate-100 shadow-elevation-1 text-center">
+                    <div class="w-20 h-20 rounded-full bg-gradient-to-tr from-amber-400 to-teal-400 p-1 mx-auto mb-3">
+                        <div class="w-full h-full rounded-full bg-slate-800 text-white flex items-center justify-center text-2xl font-bold">
+                            RT
+                        </div>
+                    </div>
+                    <h3 class="text-base font-bold text-text-dark">Routine Optimizer</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Mobile AMOLED 120Hz Edition</p>
+
+                    <div class="mt-4 pt-4 border-t border-slate-100 space-y-2 text-left">
+                        <div class="flex items-center justify-between py-2 text-sm font-medium">
+                            <span class="text-slate-700">Push Notifications</span>
+                            <input type="checkbox" checked class="accent-orange-500 w-4 h-4">
+                        </div>
+                        <div class="flex items-center justify-between py-2 text-sm font-medium">
+                            <span class="text-slate-700">120Hz Performance Mode</span>
+                            <span class="text-xs text-emerald-500 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md">Active</span>
+                        </div>
+                        <button onclick="clearAllData()" class="w-full mt-4 py-2.5 bg-red-50 text-accent-red font-semibold text-xs rounded-xl hover:bg-red-100 transition-colors">
+                            Reset All Local Activities
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- FLOATING ACTION BUTTON (FAB) FOR ADDING CUSTOM ROUTINES -->
+        <button onclick="openAddModal()" class="absolute bottom-20 right-6 w-14 h-14 bg-gradient-to-tr from-orange-500 to-amber-400 text-white rounded-full flex items-center justify-center shadow-lg shadow-orange-500/30 active:scale-90 hover:scale-105 transition-all duration-200 z-30 group" aria-label="Add Activity">
+            <svg class="w-7
